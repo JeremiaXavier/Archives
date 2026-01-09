@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Document - Web Writer</title>
+
+    <!-- CKEditor 5 -->
+    <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.css">
+    <script src="https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.umd.js"></script>
+
+    <!-- PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- DOCX Generation -->
+    <script src="
+https://cdn.jsdelivr.net/npm/docx@9.5.1/dist/index.iife.min.js
+"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #2b579a;
+            --hover-blue: #1c3f6e;
+            --light-gray: #f3f3f3;
+            --border-gray: #d1d1d1;
+            --text-dark: #323130;
+            --white: #ffffff;
+            --menu-hover: #e8e8e8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Menu Bar */
+        .top-bar {
+            background: var(--primary-blue);
+            color: white;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 13px;
+            position: relative;
+            z-index: 1000;
+        }
+
+        .app-icon {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 2px;
+            margin-right: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary-blue);
+            font-size: 12px;
+        }
+
+        .doc-title-input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 13px;
+            padding: 4px 8px;
+            outline: none;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .doc-title-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .top-bar-right {
+            margin-left: auto;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .top-bar-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 2px;
+        }
+
+        .top-bar-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Menu Bar */
+        .menu-bar {
+            background: var(--white);
+            border-bottom: 1px solid var(--border-gray);
+            display: flex;
+            align-items: center;
+            height: 30px;
+            position: relative;
+            z-index: 999;
+        }
+
+        .menu-item {
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-dark);
+            position: relative;
+            user-select: none;
+        }
+
+        .menu-item:hover {
+            background: var(--menu-hover);
+        }
+
+        .menu-item.active {
+            background: var(--menu-hover);
+        }
+
+        /* Dropdown Menus */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid var(--border-gray);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            min-width: 220px;
+            z-index: 1000;
+        }
+
+        .dropdown-menu.active {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 6px 30px 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-dark);
+        }
+
+        .dropdown-item:hover {
+            background: var(--menu-hover);
+        }
+
+        .dropdown-item.disabled {
+            color: #a6a6a6;
+            cursor: not-allowed;
+        }
+
+        .dropdown-item.disabled:hover {
+            background: transparent;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border-gray);
+            margin: 3px 0;
+        }
+
+        .shortcut {
+            font-size: 11px;
+            color: #666;
+            margin-left: 20px;
+        }
+
+        /* Ribbon */
+        .ribbon-container {
+            background: var(--white);
+            border-bottom: 1px solid var(--border-gray);
+            position: relative;
+            z-index: 998;
+        }
+
+        .ribbon-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-gray);
+            background: var(--light-gray);
+        }
+
+        .ribbon-tab {
+            padding: 6px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-dark);
+            border: 1px solid transparent;
+            border-bottom: none;
+            background: transparent;
+        }
+
+        .ribbon-tab:hover {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .ribbon-tab.active {
+            background: white;
+            border: 1px solid var(--border-gray);
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+        }
+
+        .ribbon-content {
+            display: none;
+            padding: 8px 10px;
+            background: white;
+            min-height: 90px;
+        }
+
+        .ribbon-content.active {
+            display: flex;
+            gap: 5px;
+        }
+
+        .ribbon-group {
+            display: flex;
+            flex-direction: column;
+            padding: 0 8px;
+            border-right: 1px solid var(--border-gray);
+        }
+
+        .ribbon-group:last-child {
+            border-right: none;
+        }
+
+        .ribbon-group-label {
+            font-size: 11px;
+            color: #666;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .ribbon-buttons {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .ribbon-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 5px 8px;
+            cursor: pointer;
+            font-size: 12px;
+            border-radius: 2px;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .ribbon-btn:hover {
+            background: var(--menu-hover);
+            border-color: var(--border-gray);
+        }
+
+        .ribbon-btn-icon {
+            font-size: 16px;
+        }
+
+        select.ribbon-select {
+            border: 1px solid var(--border-gray);
+            padding: 4px 6px;
+            font-size: 12px;
+            border-radius: 2px;
+            background: white;
+            cursor: pointer;
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: var(--light-gray);
+            border-right: 1px solid var(--border-gray);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+            border-right: none;
+        }
+
+        .sidebar-header {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-gray);
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-close {
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 15px;
+        }
+
+        .sidebar-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-dark);
+        }
+
+        .sidebar-item {
+            padding: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 3px;
+            margin-bottom: 2px;
+        }
+
+        .sidebar-item:hover {
+            background: var(--menu-hover);
+        }
+
+        /* Editor Area */
+        .editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #e8e8e8;
+        }
+
+        .editor-toolbar {
+            background: var(--light-gray);
+            border-bottom: 1px solid var(--border-gray);
+            padding: 5px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .editor-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px 50px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .editor-wrapper {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .ck.ck-editor {
+            border: none;
+        }
+
+        .ck.ck-editor__main>.ck-editor__editable {
+            min-height: 297mm;
+            background: #ffffff;
+            color: #000000;
+            font-family: 'Calibri', 'Times New Roman', serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            padding: 2.54cm;
+            border: none;
+        }
+
+        /* CKEditor Toolbar Integration */
+        #ckeditorToolbarContainer .ck-toolbar {
+            border: none !important;
+            background: transparent !important;
+            padding: 0 !important;
+        }
+
+        #ckeditorToolbarContainer .ck-toolbar__items {
+            flex-wrap: wrap !important;
+        }
+
+        .ck.ck-editor__top {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: var(--white);
+            border-top: 1px solid var(--border-gray);
+            padding: 4px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-dark);
+            height: 24px;
+        }
+
+        .status-left,
+        .status-right {
+            display: flex;
+            gap: 15px;
+        }
+
+        .status-item {
+            cursor: pointer;
+        }
+
+        .status-item:hover {
+            text-decoration: underline;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border: 1px solid var(--border-gray);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            min-width: 400px;
+            max-width: 600px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--light-gray);
+        }
+
+        .modal-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #666;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2px;
+        }
+
+        .modal-close:hover {
+            background: var(--menu-hover);
+        }
+
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border-gray);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .modal-btn {
+            padding: 6px 16px;
+            border: 1px solid var(--border-gray);
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            border-radius: 2px;
+        }
+
+        .modal-btn:hover {
+            background: var(--menu-hover);
+        }
+
+        .modal-btn-primary {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        .modal-btn-primary:hover {
+            background: var(--hover-blue);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid var(--border-gray);
+            font-size: 13px;
+            border-radius: 2px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            min-height: 100px;
+            font-family: monospace;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        @media print {
+
+            .top-bar,
+            .menu-bar,
+            .ribbon-container,
+            .sidebar,
+            .status-bar,
+            .editor-toolbar {
+                display: none !important;
+            }
+
+            .editor-area {
+                background: white;
+            }
+
+            .editor-container {
+                padding: 0;
+            }
+
+            .editor-wrapper {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="app-icon">W</div>
+        <input type="text" class="doc-title-input" id="docTitle" placeholder="Document">
+        <div class="top-bar-right">
+            <span id="loadingIndicator" style="font-size: 11px; color: rgba(255,255,255,0.7);">Loading...</span>
+            <button class="top-bar-btn" onclick="saveDocument()" title="Save">💾 Save</button>
+            <button class="top-bar-btn" onclick="shareDocument()" title="Share">🔗 Share</button>
+            <button class="top-bar-btn" onclick="showHelp()" title="Help">?</button>
+        </div>
+    </div>
+
+    <!-- Menu Bar -->
+    <div class="menu-bar">
+        <div class="menu-item" onclick="toggleMenu(this, 'fileMenu')">
+            File
+            <div class="dropdown-menu" id="fileMenu">
+                <div class="dropdown-item" onclick="newDocument()">
+                    <span>New</span>
+                    <span class="shortcut">Ctrl+N</span>
+                </div>
+                <div class="dropdown-item" onclick="openDocument()">
+                    <span>Open</span>
+                    <span class="shortcut">Ctrl+O</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="saveDocument()">
+                    <span>Save</span>
+                    <span class="shortcut">Ctrl+S</span>
+                </div>
+                <div class="dropdown-item" onclick="saveAsDocument()">
+                    <span>Save As...</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="exportDocument('pdf')">
+                    <span>Export as PDF</span>
+                </div>
+                <div class="dropdown-item" onclick="exportDocument('html')">
+                    <span>Export as HTML</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="printDocument()">
+                    <span>Print</span>
+                    <span class="shortcut">Ctrl+P</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-item" onclick="toggleMenu(this, 'editMenu')">
+            Edit
+            <div class="dropdown-menu" id="editMenu">
+                <div class="dropdown-item" onclick="editor.execute('undo'); closeAllMenus();">
+                    <span>Undo</span>
+                    <span class="shortcut">Ctrl+Z</span>
+                </div>
+                <div class="dropdown-item" onclick="editor.execute('redo'); closeAllMenus();">
+                    <span>Redo</span>
+                    <span class="shortcut">Ctrl+Y</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="document.execCommand('cut'); closeAllMenus();">
+                    <span>Cut</span>
+                    <span class="shortcut">Ctrl+X</span>
+                </div>
+                <div class="dropdown-item" onclick="document.execCommand('copy'); closeAllMenus();">
+                    <span>Copy</span>
+                    <span class="shortcut">Ctrl+C</span>
+                </div>
+                <div class="dropdown-item" onclick="document.execCommand('paste'); closeAllMenus();">
+                    <span>Paste</span>
+                    <span class="shortcut">Ctrl+V</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="editor.execute('find'); closeAllMenus();">
+                    <span>Find and Replace</span>
+                    <span class="shortcut">Ctrl+F</span>
+                </div>
+                <div class="dropdown-item" onclick="editor.execute('selectAll'); closeAllMenus();">
+                    <span>Select All</span>
+                    <span class="shortcut">Ctrl+A</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-item" onclick="toggleMenu(this, 'viewMenu')">
+            View
+            <div class="dropdown-menu" id="viewMenu">
+                <div class="dropdown-item" onclick="toggleSidebar()">
+                    <span>Navigation Pane</span>
+                </div>
+                <div class="dropdown-item" onclick="toggleRibbon()">
+                    <span>Ribbon</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="zoomIn()">
+                    <span>Zoom In</span>
+                    <span class="shortcut">Ctrl++</span>
+                </div>
+                <div class="dropdown-item" onclick="zoomOut()">
+                    <span>Zoom Out</span>
+                    <span class="shortcut">Ctrl+-</span>
+                </div>
+                <div class="dropdown-item" onclick="zoomReset()">
+                    <span>Reset Zoom</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="toggleFullscreen()">
+                    <span>Fullscreen</span>
+                    <span class="shortcut">F11</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-item" onclick="toggleMenu(this, 'insertMenu')">
+            Insert
+            <div class="dropdown-menu" id="insertMenu">
+                <div class="dropdown-item" onclick="insertTable()">
+                    <span>Table</span>
+                </div>
+                <div class="dropdown-item" onclick="insertImage()">
+                    <span>Image</span>
+                </div>
+                <div class="dropdown-item" onclick="insertLink()">
+                    <span>Link</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="insertPageBreak()">
+                    <span>Page Break</span>
+                </div>
+                <div class="dropdown-item" onclick="insertHorizontalLine()">
+                    <span>Horizontal Line</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-item" onclick="toggleMenu(this, 'formatMenu')">
+            Format
+            <div class="dropdown-menu" id="formatMenu">
+                <div class="dropdown-item" onclick="editor.execute('heading', {value: 'heading1'}); closeAllMenus();">
+                    <span>Heading 1</span>
+                </div>
+                <div class="dropdown-item" onclick="editor.execute('heading', {value: 'heading2'}); closeAllMenus();">
+                    <span>Heading 2</span>
+                </div>
+                <div class="dropdown-item" onclick="editor.execute('heading', {value: 'heading3'}); closeAllMenus();">
+                    <span>Heading 3</span>
+                </div>
+                <div class="dropdown-item" onclick="editor.execute('heading', {value: 'paragraph'}); closeAllMenus();">
+                    <span>Normal Text</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="editor.execute('bold'); closeAllMenus();">
+                    <span>Bold</span>
+                    <span class="shortcut">Ctrl+B</span>
+                </div>
+                <div class="dropdown-item" onclick="editor.execute('italic'); closeAllMenus();">
+                    <span>Italic</span>
+                    <span class="shortcut">Ctrl+I</span>
+                </div>
+                <div class="dropdown-item" onclick="editor.execute('underline'); closeAllMenus();">
+                    <span>Underline</span>
+                    <span class="shortcut">Ctrl+U</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="editor.execute('removeFormat'); closeAllMenus();">
+                    <span>Clear Formatting</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-item" onclick="toggleMenu(this, 'toolsMenu')">
+            Tools
+            <div class="dropdown-menu" id="toolsMenu">
+                <div class="dropdown-item" onclick="showWordCount()">
+                    <span>Word Count</span>
+                </div>
+                <div class="dropdown-item" onclick="spellCheck()">
+                    <span>Spelling & Grammar</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-item" onclick="toggleMenu(this, 'helpMenu')">
+            Help
+            <div class="dropdown-menu" id="helpMenu">
+                <div class="dropdown-item" onclick="showHelp()">
+                    <span>Help</span>
+                </div>
+                <div class="dropdown-item" onclick="showAbout()">
+                    <span>About Web Writer</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ribbon -->
+    <div class="ribbon-container" id="ribbonContainer">
+        <div class="ribbon-tabs">
+            <div class="ribbon-tab active" onclick="switchRibbon('homeRibbon', this)">Home</div>
+            <div class="ribbon-tab" onclick="switchRibbon('insertRibbon', this)">Insert</div>
+            <div class="ribbon-tab" onclick="switchRibbon('layoutRibbon', this)">Layout</div>
+            <div class="ribbon-tab" onclick="switchRibbon('reviewRibbon', this)">Review</div>
+        </div>
+
+        <!-- Home Ribbon -->
+        <div class="ribbon-content active" id="homeRibbon">
+            <!-- CKEditor toolbar will be moved here -->
+            <div id="ckeditorToolbarContainer" style="width: 100%; display: flex; flex-wrap: wrap;"></div>
+        </div>
+
+        <!-- Insert Ribbon -->
+        <div class="ribbon-content" id="insertRibbon">
+            <div class="ribbon-group">
+                <div class="ribbon-buttons">
+                    <button class="ribbon-btn" onclick="editor.execute('insertTable', {rows: 3, columns: 3})"
+                        title="Table">
+                        <span class="ribbon-btn-icon">⊞</span> Table
+                    </button>
+                    <button class="ribbon-btn" onclick="insertImageFromFile()" title="Image">
+                        <span class="ribbon-btn-icon">🖼️</span> Image
+                    </button>
+                </div>
+                <div class="ribbon-group-label">Tables & Images</div>
+            </div>
+
+            <div class="ribbon-group">
+                <div class="ribbon-buttons">
+                    <button class="ribbon-btn" onclick="insertLinkPrompt()" title="Link">
+                        <span class="ribbon-btn-icon">🔗</span> Link
+                    </button>
+                    <button class="ribbon-btn" onclick="editor.execute('pageBreak')" title="Page Break">
+                        <span class="ribbon-btn-icon">📄</span> Page Break
+                    </button>
+                </div>
+                <div class="ribbon-group-label">Links & Pages</div>
+            </div>
+
+            <div class="ribbon-group">
+                <div class="ribbon-buttons">
+                    <button class="ribbon-btn" onclick="editor.execute('horizontalLine')" title="Horizontal Line">
+                        <span class="ribbon-btn-icon">─</span> Line
+                    </button>
+                    <button class="ribbon-btn" onclick="editor.execute('blockQuote')" title="Block Quote">
+                        <span class="ribbon-btn-icon">❝</span> Quote
+                    </button>
+                </div>
+                <div class="ribbon-group-label">Elements</div>
+            </div>
+        </div>
+
+        <!-- Layout Ribbon -->
+        <div class="ribbon-content" id="layoutRibbon">
+            <div class="ribbon-group">
+                <div class="ribbon-buttons">
+                    <button class="ribbon-btn" onclick="editor.execute('alignment', {value: 'left'})"
+                        title="Align Left">
+                        ≡ Left
+                    </button>
+                    <button class="ribbon-btn" onclick="editor.execute('alignment', {value: 'center'})"
+                        title="Align Center">
+                        ≣ Center
+                    </button>
+                    <button class="ribbon-btn" onclick="editor.execute('alignment', {value: 'right'})"
+                        title="Align Right">
+                        ≡ Right
+                    </button>
+                    <button class="ribbon-btn" onclick="editor.execute('alignment', {value: 'justify'})"
+                        title="Justify">
+                        ≣ Justify
+                    </button>
+                </div>
+                <div class="ribbon-group-label">Alignment</div>
+            </div>
+
+            <div class="ribbon-group">
+                <div class="ribbon-buttons">
+                    <button class="ribbon-btn" onclick="editor.execute('indent')" title="Increase Indent">
+                        → Indent
+                    </button>
+                    <button class="ribbon-btn" onclick="editor.execute('outdent')" title="Decrease Indent">
+                        ← Outdent
+                    </button>
+                </div>
+                <div class="ribbon-group-label">Indent</div>
+            </div>
+
+            <div class="ribbon-group">
+                <div class="ribbon-buttons">
+                    <button class="ribbon-btn" onclick="editor.execute('bulletedList')" title="Bulleted List">
+                        • Bullets
+                    </button>
+                    <button class="ribbon-btn" onclick="editor.execute('numberedList')" title="Numbered List">
+                        1. Numbers
+                    </button>
+                </div>
+                <div class="ribbon-group-label">Lists</div>
+            </div>
+        </div>
+
+        <!-- Review Ribbon -->
+        <div class="ribbon-content" id="reviewRibbon">
+            <div class="ribbon-group">
+                <div class="ribbon-buttons">
+                    <button class="ribbon-btn" onclick="spellCheck()" title="Spelling">
+                        ✓ Spelling
+                    </button>
+                    <button class="ribbon-btn" onclick="showWordCount()" title="Word Count">
+                        📊 Word Count
+                    </button>
+                </div>
+                <div class="ribbon-group-label">Proofing</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                Navigation
+                <span class="sidebar-close" onclick="toggleSidebar()">×</span>
+            </div>
+            <div class="sidebar-content">
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Quick Actions</div>
+                    <div class="sidebar-item" onclick="insertTemplate('letter')">📧 Letter Template</div>
+                    <div class="sidebar-item" onclick="insertTemplate('report')">📋 Report Template</div>
+                    <div class="sidebar-item" onclick="insertTemplate('resume')">📄 Resume Template</div>
+                    <div class="sidebar-item" onclick="insertTemplate('essay')">📝 Essay Template</div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Recent Documents</div>
+                    <div class="sidebar-item" onclick="loadRecent(0)">Document 1</div>
+                    <div class="sidebar-item" onclick="loadRecent(1)">Document 2</div>
+                    <div class="sidebar-item" onclick="loadRecent(2)">Document 3</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor Area -->
+        <div class="editor-area">
+            <div class="editor-toolbar">
+                <span id="zoomLevel">100%</span>
+            </div>
+
+            <div class="editor-container" id="editorContainer">
+                <div class="editor-wrapper">
+                    <div id="editor"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-left">
+            <span class="status-item" onclick="showWordCount()">Words: <span id="wordCount">0</span></span>
+            <span class="status-item">Pages: <span id="pageCount">1</span></span>
+        </div>
+        <div class="status-right">
+            <span class="status-item" onclick="zoomOut()">-</span>
+            <span class="status-item" id="statusZoom">100%</span>
+            <span class="status-item" onclick="zoomIn()">+</span>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="mainModal">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Modal Title</div>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                Modal content goes here
+            </div>
+            <div class="modal-footer" id="modalFooter">
+                <button class="modal-btn" onclick="closeModal()">Cancel</button>
+                <button class="modal-btn modal-btn-primary" onclick="closeModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Suppress extension errors
+        window.addEventListener('error', function (e) {
+            if (e.message && (e.message.includes('chrome://') || e.message.includes('Assertion failed'))) {
+                e.preventDefault();
+                return true;
+            }
+        }, true);
+
+        // Wait for all libraries to load
+        let librariesLoaded = false;
+
+        window.addEventListener('load', function () {
+            // Check if all required libraries are loaded
+            setTimeout(function () {
+                if (window.docx && window.jspdf && window.html2canvas && window.saveAs) {
+                    librariesLoaded = true;
+                    const indicator = document.getElementById('loadingIndicator');
+                    if (indicator) {
+                        indicator.style.display = 'none';
+                    }
+                } else {
+                    console.warn('Some libraries may not have loaded:', {
+                        docx: !!window.docx,
+                        jspdf: !!window.jspdf,
+                        html2canvas: !!window.html2canvas,
+                        saveAs: !!window.saveAs
+                    });
+                }
+            }, 1000);
+        });
+
+        const {
+            ClassicEditor,
+            Essentials,
+            Bold,
+            Italic,
+            Underline,
+            Strikethrough,
+            Code,
+            Subscript,
+            Superscript,
+            Font,
+            Paragraph,
+            Heading,
+            BlockQuote,
+            Link,
+            List,
+            TodoList,
+            Indent,
+            IndentBlock,
+            Alignment,
+            Table,
+            TableToolbar,
+            MediaEmbed,
+            Image,
+            ImageCaption,
+            ImageStyle,
+            ImageToolbar,
+            ImageUpload,
+            Base64UploadAdapter,
+            CodeBlock,
+            HorizontalLine,
+            SourceEditing,
+            FindAndReplace,
+            RemoveFormat,
+            SpecialCharacters,
+            SpecialCharactersEssentials,
+            PageBreak,
+            Autoformat,
+            AutoLink,
+            TextTransformation,
+            Highlight,
+            FontBackgroundColor,
+            FontColor
+        } = CKEDITOR;
+
+        let editor;
+        let currentZoom = 100;
+
+        // Initialize CKEditor
+        ClassicEditor
+            .create(document.querySelector('#editor'), {
+                plugins: [
+                    Essentials,
+                    Bold, Italic, Underline, Strikethrough, Code, Subscript, Superscript,
+                    Font, FontBackgroundColor, FontColor,
+                    Paragraph, Heading, BlockQuote,
+                    Link, List, TodoList,
+                    Indent, IndentBlock, Alignment,
+                    Table, TableToolbar,
+                    MediaEmbed,
+                    Image, ImageCaption, ImageStyle, ImageToolbar, ImageUpload, Base64UploadAdapter,
+                    CodeBlock, HorizontalLine,
+                    SourceEditing, FindAndReplace, RemoveFormat,
+                    SpecialCharacters, SpecialCharactersEssentials,
+                    PageBreak, Autoformat, AutoLink, TextTransformation,
+                    Highlight
+                ],
+                toolbar: {
+                    items: [
+                        'undo', 'redo',
+                        '|', 'heading',
+                        '|', 'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor',
+                        '|', 'bold', 'italic', 'underline', 'strikethrough', 'code', 'subscript', 'superscript',
+                        '|', 'link', 'uploadImage', 'insertTable', 'blockQuote', 'codeBlock',
+                        '|', 'bulletedList', 'numberedList', 'todoList',
+                        '|', 'alignment', 'outdent', 'indent',
+                        '|', 'horizontalLine', 'pageBreak', 'specialCharacters',
+                        '|', 'highlight', 'removeFormat',
+                        '|', 'findAndReplace', 'sourceEditing'
+                    ],
+                    shouldNotGroupWhenFull: true
+                },
+                heading: {
+                    options: [
+                        { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                        { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                        { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                        { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' }
+                    ]
+                },
+                fontSize: {
+                    options: [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 36],
+                    supportAllValues: true
+                },
+                fontFamily: {
+                    options: [
+                        'default',
+                        'Calibri',
+                        'Arial',
+                        'Times New Roman',
+                        'Georgia',
+                        'Verdana',
+                        'Courier New'
+                    ]
+                },
+                table: {
+                    contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells']
+                },
+                image: {
+                    toolbar: ['imageTextAlternative', 'imageStyle:inline', 'imageStyle:block', 'imageStyle:side']
+                }
+            })
+            .then(newEditor => {
+                editor = newEditor;
+
+                // Move CKEditor toolbar to ribbon
+                const toolbarElement = document.querySelector('.ck-toolbar');
+                const ribbonContainer = document.getElementById('ckeditorToolbarContainer');
+
+                if (toolbarElement && ribbonContainer) {
+                    ribbonContainer.appendChild(toolbarElement);
+
+                    // Style the toolbar to fit the ribbon
+                    toolbarElement.style.border = 'none';
+                    toolbarElement.style.background = 'transparent';
+                    toolbarElement.style.padding = '0';
+                }
+
+                // Update stats on content change
+                editor.model.document.on('change:data', () => {
+                    updateStats();
+                });
+
+                // Load autosave
+                loadAutosave();
+
+                // Autosave every 30 seconds
+                setInterval(autosave, 30000);
+
+                // Keyboard shortcuts
+                setupKeyboardShortcuts();
+            })
+            .catch(error => {
+                console.error(error);
+            });
+
+        // Menu Functions
+        let currentOpenMenu = null;
+
+        function toggleMenu(menuItem, menuId) {
+            const menu = document.getElementById(menuId);
+            const allMenus = document.querySelectorAll('.dropdown-menu');
+            const allMenuItems = document.querySelectorAll('.menu-item');
+
+            allMenus.forEach(m => {
+                if (m.id !== menuId) {
+                    m.classList.remove('active');
+                }
+            });
+
+            allMenuItems.forEach(item => {
+                if (item !== menuItem) {
+                    item.classList.remove('active');
+                }
+            });
+
+            if (menu.classList.contains('active')) {
+                menu.classList.remove('active');
+                menuItem.classList.remove('active');
+                currentOpenMenu = null;
+            } else {
+                menu.classList.add('active');
+                menuItem.classList.add('active');
+                currentOpenMenu = menuId;
+            }
+        }
+
+        // Close menus when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.menu-item')) {
+                document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('active'));
+                document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+                currentOpenMenu = null;
+            }
+        });
+
+        // Ribbon Functions
+        function switchRibbon(ribbonId, tab) {
+            document.querySelectorAll('.ribbon-content').forEach(r => r.classList.remove('active'));
+            document.querySelectorAll('.ribbon-tab').forEach(t => t.classList.remove('active'));
+
+            document.getElementById(ribbonId).classList.add('active');
+            tab.classList.add('active');
+        }
+
+        function toggleRibbon() {
+            const ribbon = document.getElementById('ribbonContainer');
+            ribbon.style.display = ribbon.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Editor Commands - Not needed anymore, CKEditor toolbar handles this
+        function execCommand(command) {
+            // This function is kept for backward compatibility with menu items
+            // Most commands are now handled by CKEditor's toolbar
+        }
+
+        function changeFontFamily(font) {
+            if (editor) {
+                editor.execute('fontFamily', { value: font });
+            }
+        }
+
+        function changeFontSize(size) {
+            if (editor) {
+                editor.execute('fontSize', { value: size + 'pt' });
+            }
+        }
+
+        function applyHeading(level) {
+            if (editor) {
+                editor.execute('heading', { value: level });
+            }
+        }
+
+        function clearFormatting() {
+            if (editor) {
+                editor.execute('removeFormat');
+            }
+        }
+
+        // Document Functions
+        function newDocument() {
+            if (confirm('Create a new document? Any unsaved changes will be lost.')) {
+                editor.setData('');
+                document.getElementById('docTitle').value = 'Document';
+                closeAllMenus();
+            }
+        }
+
+        async function saveDocument() {
+            const title = document.getElementById('docTitle').value || 'Document';
+            const content = editor.getData();
+
+            if (!window.docx) {
+                alert('Document libraries are still loading. Please wait a moment and try again.');
+                return;
+            }
+
+            try {
+                await exportAsDOCX(title, content);
+                closeAllMenus();
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('Error saving document: ' + error.message);
+            }
+        }
+
+        async function exportAsDOCX(title, content) {
+            if (!window.docx) {
+                throw new Error('DOCX library not loaded');
+            }
+
+            const { Document, Packer, Paragraph, TextRun, HeadingLevel } = window.docx;
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(content, 'text/html');
+            const children = [];
+
+            const processNode = (node) => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = node.textContent.trim();
+                    if (text) {
+                        return new TextRun({ text: text });
+                    }
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    const tagName = node.tagName.toLowerCase();
+
+                    if (tagName === 'p') {
+                        const runs = [];
+                        node.childNodes.forEach(child => {
+                            const run = processInlineNode(child);
+                            if (run) runs.push(run);
+                        });
+                        if (runs.length > 0) {
+                            children.push(new Paragraph({ children: runs, spacing: { after: 200 } }));
+                        } else {
+                            children.push(new Paragraph({ text: '' }));
+                        }
+                    } else if (tagName.match(/^h[1-3]$/)) {
+                        const level = parseInt(tagName[1]);
+                        const headingLevels = [HeadingLevel.HEADING_1, HeadingLevel.HEADING_2, HeadingLevel.HEADING_3];
+                        children.push(
+                            new Paragraph({
+                                text: node.textContent,
+                                heading: headingLevels[level - 1],
+                                spacing: { before: 240, after: 120 }
+                            })
+                        );
+                    } else if (tagName === 'ul' || tagName === 'ol') {
+                        node.querySelectorAll('li').forEach(li => {
+                            children.push(
+                                new Paragraph({
+                                    text: '• ' + li.textContent,
+                                    spacing: { after: 100 }
+                                })
+                            );
+                        });
+                    } else {
+                        node.childNodes.forEach(child => processNode(child));
+                    }
+                }
+            };
+
+            const processInlineNode = (node) => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = node.textContent;
+                    if (text.trim()) {
+                        return new TextRun({ text: text });
+                    }
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    const tagName = node.tagName.toLowerCase();
+                    const text = node.textContent;
+
+                    if (!text.trim()) return null;
+
+                    const options = { text: text };
+
+                    if (tagName === 'strong' || tagName === 'b') {
+                        options.bold = true;
+                    } else if (tagName === 'em' || tagName === 'i') {
+                        options.italics = true;
+                    } else if (tagName === 'u') {
+                        options.underline = {};
+                    }
+
+                    return new TextRun(options);
+                }
+                return null;
+            };
+
+            doc.body.childNodes.forEach(node => processNode(node));
+
+            if (children.length === 0) {
+                children.push(new Paragraph({ text: '' }));
+            }
+
+            const docxDoc = new Document({
+                sections: [{
+                    properties: {},
+                    children: children
+                }]
+            });
+
+            const blob = await Packer.toBlob(docxDoc);
+
+            if (!window.saveAs) {
+                // Fallback if FileSaver.js didn't load
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.docx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                saveAs(blob, `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.docx`);
+            }
+        }
+
+        function saveAsDocument() {
+            const title = prompt('Enter document name:', document.getElementById('docTitle').value || 'Document');
+            if (title) {
+                document.getElementById('docTitle').value = title;
+                saveDocument();
+            }
+            closeAllMenus();
+        }
+
+        function openDocument() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json,.docx';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file.name.endsWith('.json')) {
+                    const reader = new FileReader();
+                    reader.onload = event => {
+                        try {
+                            const data = JSON.parse(event.target.result);
+                            document.getElementById('docTitle').value = data.title || 'Document';
+                            editor.setData(data.content || '');
+                        } catch (err) {
+                            alert('Error loading document');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+            closeAllMenus();
+        }
+
+        async function exportDocument(type) {
+            const title = document.getElementById('docTitle').value || 'Document';
+            const content = editor.getData();
+
+            if (type === 'pdf' && !window.jspdf) {
+                alert('PDF library is still loading. Please wait a moment and try again.');
+                return;
+            }
+
+            if (type === 'pdf') {
+                await exportAsPDF(title, content);
+            } else if (type === 'html') {
+                exportAsHTML(title, content);
+            }
+            closeAllMenus();
+        }
+
+        async function exportAsPDF(title, content) {
+            const { jsPDF } = window.jspdf;
+
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.width = '800px';
+            tempDiv.style.padding = '40px';
+            tempDiv.style.background = 'white';
+            tempDiv.style.fontFamily = 'Arial, sans-serif';
+            tempDiv.style.fontSize = '14px';
+            tempDiv.style.lineHeight = '1.6';
+            tempDiv.innerHTML = content;
+            document.body.appendChild(tempDiv);
+
+            try {
+                const canvas = await html2canvas(tempDiv, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
+
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgWidth = 210;
+                const pageHeight = 297;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                const imgData = canvas.toDataURL('image/png');
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                pdf.save(`${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
+            } catch (error) {
+                console.error('PDF error:', error);
+                alert('Error exporting PDF');
+            } finally {
+                document.body.removeChild(tempDiv);
+            }
+        }
+
+        function exportAsHTML(title, content) {
+            const html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>${title}</title>
+    <style>
+        body { max-width: 800px; margin: 40px auto; padding: 20px; font-family: 'Calibri', Arial, sans-serif; line-height: 1.6; }
+        h1, h2, h3 { margin-top: 1.5em; }
+    </style>
+</head>
+<body>
+${content}
+</body>
+</html>`;
+
+            const blob = new Blob([html], { type: 'text/html' });
+            saveAs(blob, `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.html`);
+        }
+
+        function printDocument() {
+            window.print();
+            closeAllMenus();
+        }
+
+        // Insert Functions
+        function insertTable() {
+            if (editor) {
+                editor.execute('insertTable', { rows: 3, columns: 3 });
+            }
+            closeAllMenus();
+        }
+
+        function insertImageFromFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        editor.execute('insertImage', { source: event.target.result });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+        }
+
+        function insertImage() {
+            insertImageFromFile();
+            closeAllMenus();
+        }
+
+        function insertLinkPrompt() {
+            const url = prompt('Enter URL:');
+            if (url && editor) {
+                editor.execute('link', url);
+            }
+        }
+
+        function insertLink() {
+            insertLinkPrompt();
+            closeAllMenus();
+        }
+
+        function insertPageBreak() {
+            if (editor) {
+                editor.execute('pageBreak');
+            }
+            closeAllMenus();
+        }
+
+        function insertHorizontalLine() {
+            if (editor) {
+                editor.execute('horizontalLine');
+            }
+            closeAllMenus();
+        }
+
+        // View Functions
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+            closeAllMenus();
+        }
+
+        function zoomIn() {
+            currentZoom = Math.min(currentZoom + 10, 200);
+            updateZoom();
+            closeAllMenus();
+        }
+
+        function zoomOut() {
+            currentZoom = Math.max(currentZoom - 10, 50);
+            updateZoom();
+            closeAllMenus();
+        }
+
+        function zoomReset() {
+            currentZoom = 100;
+            updateZoom();
+            closeAllMenus();
+        }
+
+        function updateZoom() {
+            const container = document.getElementById('editorContainer');
+            container.style.zoom = currentZoom + '%';
+            document.getElementById('zoomLevel').textContent = currentZoom + '%';
+            document.getElementById('statusZoom').textContent = currentZoom + '%';
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+            closeAllMenus();
+        }
+
+        // Template Functions
+        function insertTemplate(type) {
+            let template = '';
+
+            switch (type) {
+                case 'letter':
+                    template = `<p>[Your Name]<br>[Your Address]<br>[City, State ZIP]<br>[Date]</p>
+<p>[Recipient Name]<br>[Company Name]<br>[Address]<br>[City, State ZIP]</p>
+<p>Dear [Recipient Name],</p>
+<p>[Opening paragraph]</p>
+<p>[Body paragraph]</p>
+<p>[Closing paragraph]</p>
+<p>Sincerely,<br>[Your Name]</p>`;
+                    break;
+                case 'report':
+                    template = `<h1>Report Title</h1>
+<p><strong>Date:</strong> ${new Date().toLocaleDateString()}<br>
+<strong>Prepared by:</strong> [Your Name]</p>
+<h2>Executive Summary</h2>
+<p>[Brief overview of key findings...]</p>
+<h2>Introduction</h2>
+<p>[Background and context...]</p>
+<h2>Findings</h2>
+<p>[Detailed analysis...]</p>
+<h2>Recommendations</h2>
+<p>[Action items...]</p>`;
+                    break;
+                case 'resume':
+                    template = `<h1>[Your Name]</h1>
+<p>[Email] | [Phone] | [Location]</p>
+<h2>Summary</h2>
+<p>[Professional summary...]</p>
+<h2>Experience</h2>
+<p><strong>[Job Title]</strong> - [Company Name] ([Dates])<br>
+[Description of responsibilities and achievements...]</p>
+<h2>Education</h2>
+<p><strong>[Degree]</strong> - [University Name] ([Year])</p>
+<h2>Skills</h2>
+<p>[List of skills...]</p>`;
+                    break;
+                case 'essay':
+                    template = `<h1>Essay Title</h1>
+<p><strong>By:</strong> [Your Name]</p>
+<h2>Introduction</h2>
+<p>[Introduction paragraph with thesis statement...]</p>
+<h2>Body Paragraph 1</h2>
+<p>[First main point...]</p>
+<h2>Body Paragraph 2</h2>
+<p>[Second main point...]</p>
+<h2>Conclusion</h2>
+<p>[Summary and final thoughts...]</p>`;
+                    break;
+            }
+
+            if (template && editor) {
+                editor.setData(template);
+            }
+        }
+
+        // Tools Functions
+        function showWordCount() {
+            const content = editor.getData();
+            const text = stripHTML(content);
+            const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
+            const chars = text.length;
+            const charsNoSpaces = text.replace(/\s/g, '').length;
+            const paragraphs = content.split(/<\/p>/).filter(p => stripHTML(p).trim().length > 0).length;
+
+            showModal('Word Count', `
+                <p><strong>Words:</strong> ${words}</p>
+                <p><strong>Characters (with spaces):</strong> ${chars}</p>
+                <p><strong>Characters (no spaces):</strong> ${charsNoSpaces}</p>
+                <p><strong>Paragraphs:</strong> ${paragraphs}</p>
+            `);
+            closeAllMenus();
+        }
+
+        function spellCheck() {
+            alert('Spell check feature uses your browser\'s built-in spell checker. Right-click on underlined words to see suggestions.');
+            closeAllMenus();
+        }
+
+        function showFindReplace() {
+            if (editor) {
+                editor.execute('find');
+            }
+            closeAllMenus();
+        }
+
+        // Utility Functions
+        function stripHTML(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        }
+
+        function updateStats() {
+            if (!editor) return;
+
+            const content = editor.getData();
+            const text = stripHTML(content);
+            const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
+
+            document.getElementById('wordCount').textContent = words;
+        }
+
+        function autosave() {
+            if (editor) {
+                const data = {
+                    title: document.getElementById('docTitle').value,
+                    content: editor.getData(),
+                    timestamp: new Date().toISOString()
+                };
+                localStorage.setItem('webwriter_autosave', JSON.stringify(data));
+            }
+        }
+
+        function loadAutosave() {
+            const saved = localStorage.getItem('webwriter_autosave');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    if (confirm('Found an autosaved document. Would you like to restore it?')) {
+                        document.getElementById('docTitle').value = data.title || 'Document';
+                        editor.setData(data.content || '');
+                    }
+                } catch (err) {
+                    console.error('Autosave load error:', err);
+                }
+            }
+        }
+
+        function loadRecent(index) {
+            alert('Recent documents feature coming soon!');
+        }
+
+        function setPageOrientation(orientation) {
+            // This would require CSS changes for print
+            alert(`Page orientation set to ${orientation}`);
+        }
+
+        function shareDocument() {
+            const url = window.location.href;
+            if (navigator.share) {
+                navigator.share({ title: document.getElementById('docTitle').value, url: url });
+            } else {
+                prompt('Share this URL:', url);
+            }
+        }
+
+        function showHelp() {
+            showModal('Help', `
+                <h3>Keyboard Shortcuts</h3>
+                <p><strong>Ctrl+S</strong> - Save Document</p>
+                <p><strong>Ctrl+N</strong> - New Document</p>
+                <p><strong>Ctrl+O</strong> - Open Document</p>
+                <p><strong>Ctrl+P</strong> - Print</p>
+                <p><strong>Ctrl+B</strong> - Bold</p>
+                <p><strong>Ctrl+I</strong> - Italic</p>
+                <p><strong>Ctrl+U</strong> - Underline</p>
+                <p><strong>Ctrl+F</strong> - Find and Replace</p>
+            `);
+        }
+
+        function showAbout() {
+            showModal('About Web Writer', `
+                <p><strong>Web Writer</strong></p>
+                <p>Version 1.0</p>
+                <p>A professional word processing application for the web.</p>
+                <p>Runs entirely in your browser - no backend required.</p>
+            `);
+        }
+
+        // Modal Functions
+        function showModal(title, bodyHTML, footerHTML = null) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').innerHTML = bodyHTML;
+
+            if (footerHTML) {
+                document.getElementById('modalFooter').innerHTML = footerHTML;
+            } else {
+                document.getElementById('modalFooter').innerHTML = '<button class="modal-btn modal-btn-primary" onclick="closeModal()">OK</button>';
+            }
+
+            document.getElementById('modalOverlay').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+
+        function closeAllMenus() {
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('active'));
+            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+            currentOpenMenu = null;
+        }
+
+        // Keyboard Shortcuts
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    switch (e.key.toLowerCase()) {
+                        case 's':
+                            e.preventDefault();
+                            saveDocument();
+                            break;
+                        case 'n':
+                            e.preventDefault();
+                            newDocument();
+                            break;
+                        case 'o':
+                            e.preventDefault();
+                            openDocument();
+                            break;
+                        case 'p':
+                            e.preventDefault();
+                            printDocument();
+                            break;
+                        case 'f':
+                            e.preventDefault();
+                            showFindReplace();
+                            break;
+                        case '=':
+                        case '+':
+                            e.preventDefault();
+                            zoomIn();
+                            break;
+                        case '-':
+                            e.preventDefault();
+                            zoomOut();
+                            break;
+                    }
+                }
+            });
+        }
+
+        // Close modal on outside click
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modalOverlay') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+
+</html>
